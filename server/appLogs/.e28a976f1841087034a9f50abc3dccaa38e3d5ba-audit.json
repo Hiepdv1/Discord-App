@@ -9,6 +9,26 @@
             "date": 1736053463233,
             "name": "appLogs\\debug-2025-01-05.log",
             "hash": "c1b25a5235b4cb573b97e39a894d9e9ad7105dd802b23aa5a8281615ee8f7df9"
+        },
+        {
+            "date": 1736144545103,
+            "name": "appLogs\\debug-2025-01-06.log",
+            "hash": "2fc2c0afb4a50b5204542375e478d8610c01da49ff59fd4bd550c6e0cc0a6516"
+        },
+        {
+            "date": 1736217912492,
+            "name": "appLogs\\debug-2025-01-07.log",
+            "hash": "1f7fef36f9ff9822bffaf1a4fbf6dbe16dbeb04dda2b4b58d7e6906dc25458b4"
+        },
+        {
+            "date": 1736333940715,
+            "name": "appLogs\\debug-2025-01-08.log",
+            "hash": "eb2252c6c716045eb940f3b30fc5a5fba92233fb2cd5e5fcc88d9e64308226ae"
+        },
+        {
+            "date": 1736386679887,
+            "name": "appLogs\\debug-2025-01-09.log",
+            "hash": "c33f86e3df04671e8ee2547e8fbf54c3c8216c0fd702faebad5d1f9db2b0592d"
         }
     ],
     "hashType": "sha256"

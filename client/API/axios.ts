@@ -4,7 +4,6 @@ import {
     generateRequestId,
     getClientIp,
 } from "@/utility/request-signature";
-// import { cookies } from "next/headers";
 import Axios from "axios";
 
 const api = Axios.create({
@@ -16,7 +15,6 @@ const api = Axios.create({
         Pragma: "no-cache",
         Expires: "0",
         "Surrogate-Control": "no-store",
-        // Cookie: cookies().toString(),
     },
     timeout: 0,
 });
@@ -36,8 +34,6 @@ api.interceptors.request.use(
         const timestamp = new Date().getTime();
         const userAgent = navigator.userAgent;
         const clientIp = await getClientIp();
-
-        console.log("Request Headers: ", config.headers);
 
         const messageParams = {
             url,
@@ -74,7 +70,6 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     (res) => {
         res.headers["Cache-Control"] = "no-store";
-        console.log("Response Headers: ", res.headers);
         return res;
     },
     (error) => {

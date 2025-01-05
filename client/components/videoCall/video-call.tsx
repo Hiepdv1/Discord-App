@@ -159,6 +159,10 @@ const VideoCall = ({
             }>((resolve) => {
                 const peer = new RTCPeerConnection({
                     iceServers: SERVER_STUNS.current,
+                    iceTransportPolicy: "all",
+                    iceCandidatePoolSize: 10,
+                    bundlePolicy: "max-bundle",
+                    rtcpMuxPolicy: "require",
                 });
 
                 peer.onicecandidate = (event) => {
@@ -334,6 +338,7 @@ const VideoCall = ({
                 iceTransportPolicy: "all",
                 iceCandidatePoolSize: 10,
                 bundlePolicy: "max-bundle",
+                rtcpMuxPolicy: "require",
             });
 
             peer.oniceconnectionstatechange = () => {
@@ -507,6 +512,8 @@ const VideoCall = ({
             kind: string;
         };
 
+        console.log("Create Consumer Sdp: ", sdp);
+
         const desc = new RTCSessionDescription(sdp);
         peer.setRemoteDescription(desc).catch((e) =>
             console.error(`SetRemoteDescription Error: ${e}`)
@@ -581,11 +588,26 @@ const VideoCall = ({
     const createPeer = (stream: MediaStream, type: string) => {
         const peer = new RTCPeerConnection({
             iceServers: SERVER_STUNS.current,
+            iceTransportPolicy: "all",
+            iceCandidatePoolSize: 10,
+            bundlePolicy: "max-bundle",
+            rtcpMuxPolicy: "require",
         });
 
         stream.getTracks().forEach((track) => {
             peer.addTrack(track, stream);
         });
+
+        peer.oniceconnectionstatechange = () => {
+            console.log("ICE Connection State:", peer.iceConnectionState);
+
+            if (
+                peer.iceConnectionState === "disconnected" ||
+                peer.iceConnectionState === "failed"
+            ) {
+                console.log("Producer connection state failed");
+            }
+        };
 
         peer.onicecandidate = (event) => {
             if (event.candidate) {
@@ -625,6 +647,8 @@ const VideoCall = ({
                 const messageEncrypted = await message;
                 const { sdp, kind, participantId, userId, producerId } =
                     JSON.parse(decrypt(messageEncrypted));
+
+                console.log("Create Producer Sdp: ", sdp);
 
                 const desc = new RTCSessionDescription(sdp);
                 peer.setRemoteDescription(desc).catch((e) =>

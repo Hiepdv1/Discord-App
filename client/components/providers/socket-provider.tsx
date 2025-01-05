@@ -31,14 +31,7 @@ type SocketContextType = {
         method?: "GET" | "POST",
         query?: any
     ) => void;
-    StunServers?: MutableRefObject<StunServer[]>;
-};
-
-type StunServer = {
-    url: string;
-    urls: string;
-    username?: string;
-    credential?: string;
+    StunServers?: MutableRefObject<RTCIceServer[]>;
 };
 
 const SocketContext = createContext<SocketContextType>({
@@ -49,7 +42,7 @@ const SocketContext = createContext<SocketContextType>({
 const SocketProvider = ({ children }: ISocketProviderProps) => {
     const { getToken, isSignedIn } = useAuth();
     const socket = useRef<Socket | null>(null);
-    const StunServers: MutableRefObject<Array<StunServer>> = useRef([]);
+    const StunServers: MutableRefObject<RTCIceServer[]> = useRef([]);
     const [isConnected, setIsConnected] = useState(false);
 
     useEffect(() => {
@@ -113,9 +106,9 @@ const SocketProvider = ({ children }: ISocketProviderProps) => {
     }, [isSignedIn, getToken, socket]);
 
     function handleStunServers(message: string) {
-        const decryptMessage = JSON.parse(decrypt(message)) as StunServer[];
+        const decryptMessage = JSON.parse(decrypt(message)) as RTCIceServer[];
         StunServers.current = decryptMessage;
-        console.log("Stun Server: ", decryptMessage);
+        console.log("StunServers: ", StunServers.current);
     }
 
     const sendMessage = (

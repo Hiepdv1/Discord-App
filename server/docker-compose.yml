@@ -1,0 +1,63 @@
+services:
+  nestapp:
+    container_name: discord-app-nestjs-server
+    image: discord-app-server/nestjs:v1
+    restart: unless-stopped
+    build:
+      context: .
+      target: production
+    ports:
+      - '3001:3001'
+      - '443:443'
+      - '80:80'
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      CLERK_SECRET_KEY: ${CLERK_SECRET_KEY}
+      APP_PORT: ${APP_PORT}
+      NODE_ENV: ${NODE_ENV}
+      TURN_SERVER_ENABLED: 'true'
+      SOCKET_PORT: ${SOCKET_PORT}
+      FRONTEND_URL: ${FRONTEND_URL}
+      HASH_VIDEO_SECRET_KEY: ${HASH_VIDEO_SECRET_KEY}
+      SESSION_SECRET: ${SESSION_SECRET}
+      SIGNATURE_BASED_AUTH: ${SIGNATURE_BASED_AUTH}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      REQUEST_SIGNATURE_EXPIRY: ${REQUEST_SIGNATURE_EXPIRY}
+      CLOUDINARY_NAME: ${CLOUDINARY_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_SECRET: ${CLOUDINARY_SECRET}
+      PUBLIC_KEY: ${PUBLIC_KEY}
+      REDIS_URL: ${REDIS_URL}
+      REDIS_TTL: ${REDIS_TTL}
+      DROPBOX_ACCESS_TOKEN: ${DROPBOX_ACCESS_TOKEN}
+      HASH_MESSAGE_SECRET_KEY: ${HASH_MESSAGE_SECRET_KEY}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN}
+    cap_add:
+      - NET_ADMIN
+      - NET_BIND_SERVICE
+    security_opt:
+      - no-new-privileges:true
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    volumes:
+      - type: bind
+        source: .
+        target: /app
+    networks:
+      - app-network
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    ports:
+      - '6379:6379'
+    environment:
+      REDIS_URL: ${REDIS_URL}
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

@@ -8,32 +8,52 @@ import { TwilioService } from 'nestjs-twilio';
 @Injectable()
 export class CallService {
   private readonly ChannelStore: Map<string, Room> = new Map();
-  private SERVER_STUNS: Array<{
-    url?: string;
-    urls: string;
-    username?: string;
-    credential?: string;
-  }> = [];
+  private SERVER_STUNS: Array<RTCIceServer> = [];
 
   constructor(private readonly twilioService: TwilioService) {}
 
   public async CreateTwilioToken() {
     try {
       const token = await this.twilioService.client.tokens.create();
-      this.SERVER_STUNS = token.iceServers as any;
-
-      this.SERVER_STUNS.push(
-        { urls: 'stun:stun1.l.google.com:19302' },
+      token.iceServers.forEach((server) => {
+        if (server.url) {
+          server.urls = server.url;
+          delete server.url;
+        }
+      });
+      const iceServers: RTCIceServer[] = [
+        {
+          urls: 'turns:global.relay.metered.ca:443',
+          username: '133e7602fa204eacae24d246',
+          credential: 'gyTBFyNvwD16jd9b',
+        },
+        {
+          urls: 'turn:global.relay.metered.ca:80?transport=tcp',
+          username: '133e7602fa204eacae24d246',
+          credential: 'gyTBFyNvwD16jd9b',
+        },
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
         { urls: 'stun:stun3.l.google.com:19302' },
-        { urls: 'stun:stun4.l.google.com:19302' },
-        { urls: 'stun:stun2.1.google.com:19302' }
-      );
-
-      console.log('Twilio Token Created:', token);
+      ];
+      this.SERVER_STUNS = [...(token.iceServers as any), ...iceServers];
+      console.log('ICE Servers Configuration:', this.SERVER_STUNS);
     } catch (error) {
       console.error('Failed to create Twilio token:', error);
+      this.SERVER_STUNS = [
+        {
+          urls: 'turn:global.relay.metered.ca:80?transport=tcp',
+          username: '133e7602fa204eacae24d246',
+          credential: 'gyTBFyNvwD16jd9b',
+        },
+        {
+          urls: 'turn:global.relay.metered.ca:443',
+          username: '133e7602fa204eacae24d246',
+          credential: 'gyTBFyNvwD16jd9b',
+        },
+        { urls: 'stun:stun1.l.google.com:19302' },
+      ];
     }
   }
 
@@ -124,6 +144,12 @@ export class CallService {
 
     const peer: RTCPeerConnection = new wrtc.RTCPeerConnection({
       iceServers: this.SERVER_STUNS,
+      iceTransportPolicy: 'all',
+      iceCandidatePoolSize: 10,
+      bundlePolicy: 'max-bundle',
+      rtcpMuxPolicy: 'require',
+      sdpSemantics: 'unified-plan',
+      encodedInsertableStreams: false,
     });
 
     let newInfoProducer: Producer;
@@ -192,51 +218,6 @@ export class CallService {
     return payload;
   }
 
-  public async createConsumerOffer({
-    chanellId,
-    producerId,
-    kind,
-  }: {
-    chanellId: string;
-    producerId: string;
-    kind: string;
-  }) {
-    const room = this.ChannelStore.get(chanellId);
-    if (!room) {
-      throw new WsNotFoundException('Room not found');
-    }
-
-    const participant = room.participants.get(producerId);
-    if (!participant) {
-      throw new WsNotFoundException('Producer not found');
-    }
-
-    const consumerPeer: RTCPeerConnection = new wrtc.RTCPeerConnection({
-      iceServers: this.SERVER_STUNS,
-    });
-
-    const producer = participant.producers.find((p) => p.kind === kind);
-
-    if (!producer) {
-      throw new WsNotFoundException(`${kind} producer not found`);
-    }
-
-    producer.streams.forEach((stream) =>
-      stream.getTracks().forEach((track) => {
-        consumerPeer.addTrack(track, stream);
-      })
-    );
-
-    const offer = await consumerPeer.createOffer();
-    await consumerPeer.setLocalDescription(offer);
-
-    return {
-      sdp: consumerPeer.localDescription,
-      kind: producer.kind,
-      producerId,
-    };
-  }
-
   public async createConsumer({
     socketId,
     roomId,
@@ -264,6 +245,12 @@ export class CallService {
 
     const peer: RTCPeerConnection = new wrtc.RTCPeerConnection({
       iceServers: this.SERVER_STUNS,
+      iceTransportPolicy: 'all',
+      iceCandidatePoolSize: 10,
+      bundlePolicy: 'max-bundle',
+      rtcpMuxPolicy: 'require',
+      sdpSemantics: 'unified-plan',
+      encodedInsertableStreams: false,
     });
 
     console.log('Kind: ', kind);
