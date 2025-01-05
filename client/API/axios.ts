@@ -4,10 +4,11 @@ import {
     generateRequestId,
     getClientIp,
 } from "@/utility/request-signature";
+// import { cookies } from "next/headers";
 import Axios from "axios";
 
 const api = Axios.create({
-    baseURL: "http://localhost:3001/",
+    baseURL: process.env.NEXT_PUBLIC_SERVER_URL,
     withCredentials: true,
     headers: {
         "Cache-Control":
@@ -15,9 +16,16 @@ const api = Axios.create({
         Pragma: "no-cache",
         Expires: "0",
         "Surrogate-Control": "no-store",
+        // Cookie: cookies().toString(),
     },
     timeout: 0,
 });
+
+const getCookie = (name: string) => {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop()?.split(";").shift();
+};
 
 api.interceptors.request.use(
     async (config) => {
@@ -28,6 +36,8 @@ api.interceptors.request.use(
         const timestamp = new Date().getTime();
         const userAgent = navigator.userAgent;
         const clientIp = await getClientIp();
+
+        console.log("Request Headers: ", config.headers);
 
         const messageParams = {
             url,
@@ -48,6 +58,12 @@ api.interceptors.request.use(
         config.headers["x-request-id"] = requestId;
         config.headers["x-client-id"] =
             process.env.NEXT_PUBLIC_SIGNATURE_CLIENT_ID;
+
+        const token = getCookie("__session");
+        if (token) {
+            config.headers["Authorization"] = `Bearer ${token}`;
+        }
+
         return config;
     },
     (error) => {
@@ -58,7 +74,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     (res) => {
         res.headers["Cache-Control"] = "no-store";
-
+        console.log("Response Headers: ", res.headers);
         return res;
     },
     (error) => {

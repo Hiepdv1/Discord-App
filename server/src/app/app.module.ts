@@ -1,5 +1,4 @@
 import { Inject, MiddlewareConsumer, Module } from '@nestjs/common';
-import { ServerModule } from './modules/server/Server.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -25,6 +24,8 @@ import connectRedis from 'connect-redis';
 import session from 'express-session';
 import { RedisClient } from 'ioredis/built/connectors/SentinelConnector/types';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { TwilioModule } from 'nestjs-twilio';
+import { ServerModule } from './modules/server/server.module';
 
 @Module({
   imports: [
@@ -38,6 +39,15 @@ import { ThrottlerModule } from '@nestjs/throttler';
           ttl: Number.parseInt(configService.get('REDIS_TTL')) || 600,
         } as unknown as CacheModuleOptions;
       },
+      isGlobal: true,
+    }),
+    TwilioModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (cfg: ConfigService) => ({
+        accountSid: cfg.get('TWILIO_ACCOUNT_SID'),
+        authToken: cfg.get('TWILIO_AUTH_TOKEN'),
+      }),
+      inject: [ConfigService],
       isGlobal: true,
     }),
     ScheduleModule.forRoot(),

@@ -19,7 +19,6 @@ import { ConversationCacheService } from '../conversation/services/conversationC
 import { SocketService } from './services/socket.service';
 import { MediaGateway } from './gateway/Media.gateway';
 import { CallService } from './services/callService.service';
-
 @Module({
   providers: [
     PostgresDatabaseProviderService,
