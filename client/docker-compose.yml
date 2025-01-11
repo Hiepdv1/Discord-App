@@ -1,0 +1,35 @@
+services:
+    nextjs:
+        container_name: discord-app-nextjs-client
+        image: discord-app-client/nextjs:v1
+        build:
+            context: .
+            target: ${NODE_ENV:-development}
+        ports:
+            - "3000:3000"
+        environment:
+            - NODE_ENV=${NODE_ENV:-development}
+            # Clerk Authentication
+            - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+            - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
+            - NEXT_PUBLIC_CLERK_SIGN_IN_URL=${NEXT_PUBLIC_CLERK_SIGN_IN_URL}
+            - NEXT_PUBLIC_CLERK_SIGN_UP_URL=${NEXT_PUBLIC_CLERK_SIGN_UP_URL}
+            - NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=${NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL}
+            - NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=${NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL}
+            - NEXT_PUBLIC_CLERK_AFTER_SIGN_OUT_URL=${NEXT_PUBLIC_CLERK_AFTER_SIGN_OUT_URL}
+
+            # Security & Encryption
+            - NEXT_PUBLIC_ENCRYPTION_ALGORITHM=${NEXT_PUBLIC_ENCRYPTION_ALGORITHM}
+            - NEXT_PUBLIC_SHARED_SECRET_KEY=${NEXT_PUBLIC_SHARED_SECRET_KEY}
+            - NEXT_PUBLIC_SIGNATURE_CLIENT_ID=${NEXT_PUBLIC_SIGNATURE_CLIENT_ID}
+            - NEXT_PUBLIC_HASH_MESSAGE_SECRET_KEY=${NEXT_PUBLIC_HASH_MESSAGE_SECRET_KEY}
+
+            # API Configuration
+            - NEXT_PUBLIC_SERVER_URL=${NEXT_PUBLIC_SERVER_URL}
+        volumes:
+            - .:/app
+            - /app/node_modules
+            - /app/.next
+networks:
+    app-network:
+        driver: bridge

@@ -3,41 +3,33 @@ import { Producer, Room } from '../dto/channel.dto';
 import wrtc from 'wrtc';
 import { v4 as genuid } from 'uuid';
 import { WsNotFoundException } from 'src/errors/WsError';
-import { TwilioService } from 'nestjs-twilio';
 
 @Injectable()
 export class CallService {
   private readonly ChannelStore: Map<string, Room> = new Map();
   private SERVER_STUNS: Array<RTCIceServer> = [];
 
-  constructor(private readonly twilioService: TwilioService) {}
+  constructor() {}
 
   public async CreateTwilioToken() {
     try {
-      const token = await this.twilioService.client.tokens.create();
-      token.iceServers.forEach((server) => {
-        if (server.url) {
-          server.urls = server.url;
-          delete server.url;
-        }
-      });
       const iceServers: RTCIceServer[] = [
         {
-          urls: 'turns:global.relay.metered.ca:443',
-          username: '133e7602fa204eacae24d246',
-          credential: 'gyTBFyNvwD16jd9b',
+          urls: 'turn:freestun.net:3478',
+          username: 'free',
+          credential: 'free',
         },
         {
-          urls: 'turn:global.relay.metered.ca:80?transport=tcp',
-          username: '133e7602fa204eacae24d246',
-          credential: 'gyTBFyNvwD16jd9b',
+          urls: 'stun:freestun.net:3478',
+          username: 'free',
+          credential: 'free',
         },
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
         { urls: 'stun:stun2.l.google.com:19302' },
         { urls: 'stun:stun3.l.google.com:19302' },
       ];
-      this.SERVER_STUNS = [...(token.iceServers as any), ...iceServers];
+      this.SERVER_STUNS = iceServers;
       console.log('ICE Servers Configuration:', this.SERVER_STUNS);
     } catch (error) {
       console.error('Failed to create Twilio token:', error);

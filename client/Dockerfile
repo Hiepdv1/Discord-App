@@ -1,46 +1,48 @@
-# Build stage for client (frontend)
-FROM node:20 AS build
+# Development stage
+FROM node:20-alpine AS development
 
 WORKDIR /app
 
-# Copy package.json and package-lock.json (or yarn.lock if using yarn)
-COPY client/package*.json ./
+# Install dependencies
+COPY package*.json ./
 RUN npm install
 
-# Copy all the client source code into the container
-COPY client/ .
+# Copy source code
+COPY . .
 
-# Build for production
-RUN npm run build
-
-# Development stage (for development environment)
-FROM node:20 AS dev
-
-WORKDIR /app
-
-# Copy files from the build stage
-COPY --from=build /app /app
-
-# Install development dependencies
-RUN npm install
-
+# Expose port
 EXPOSE 3000
 
-# CMD for development environment
 CMD ["npm", "run", "dev"]
 
-# Production stage (for production environment)
-FROM node:20 AS prod
+# Production build stage
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy files from the build stage
-COPY --from=build /app /app
+# Install dependencies
+COPY package*.json ./
+RUN npm ci
 
-# Install only production dependencies
-RUN npm install
+# Copy source code
+COPY . .
+
+# Build application
+RUN npm run build
+
+# Production stage
+FROM node:20-alpine AS production
+
+WORKDIR /app
+
+# Copy built assets
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package*.json ./
+
+ENV NODE_ENV=production
 
 EXPOSE 3000
 
-# CMD for production environment
-CMD ["npm", "run", "start:prod"]
+CMD ["npm", "start"]

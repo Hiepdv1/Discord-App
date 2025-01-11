@@ -1,36 +1,45 @@
 ############################### 
-# BUILD STAGE 
-############################### 
-FROM node:20-alpine AS build
+# BUILD STAGE
+###############################
+FROM node:20-bullseye AS build
 
 # Set the working directory
 WORKDIR /usr/src/app
 
-# Install build dependencies including WebRTC requirements
-RUN apk add --no-cache \
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
     make \
     g++ \
     python3 \
+    python3-pip \
     libtool \
     autoconf \
     automake \
-    zlib-dev \
+    zlib1g-dev \
     libpng-dev \
-    jpeg-dev \
+    libjpeg-dev \
     libwebp-dev \
-    vips-dev \
-    # WebRTC specific dependencies
-    libstdc++ \
-    libgcc \
-    opus \
-    openssl
+    libvips-dev \
+    libstdc++6 \
+    libgcc-s1 \
+    libopus0 \
+    libopus-dev \
+    libssl-dev \
+    git \
+    bash \
+    gcc \
+    build-essential \
+    curl \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy package files
-COPY package*.json ./
+COPY package*.json ./ 
 
-# Install dependencies including WebRTC
-RUN npm ci --omit=dev --unsafe-perm
-RUN npm install wrtc@latest
+RUN npm ci --unsafe-perm
+
+# Install dependencies with WebRTC
+RUN npm install wrtc@latest --build-from-source
 
 # Copy source code
 COPY . .
@@ -42,52 +51,33 @@ RUN npx prisma generate
 RUN npm run build
 
 ############################### 
-# DEVELOPMENT STAGE 
-############################### 
-FROM node:20-alpine AS development
+# PRODUCTION STAGE
+###############################
+FROM node:20-bullseye AS production
 
 WORKDIR /usr/src/app
 
-# Install development dependencies including WebRTC requirements
-RUN apk add --no-cache \
-    libstdc++ \
-    libgcc
-
-COPY --from=build /usr/src/app /usr/src/app
-
-# Install all dependencies
-RUN npm ci --unsafe-perm
-
-# Add non-root user
-USER node
-
-# Expose WebRTC ports
-EXPOSE 3001
-EXPOSE 443
-EXPOSE 80
-
-
-# Development command
-CMD ["npm", "run", "start:dev"]
-
-############################### 
-# PRODUCTION STAGE 
-############################### 
-FROM node:20-alpine AS production
-
-WORKDIR /usr/src/app
-
-# Install production dependencies including WebRTC requirements
-RUN apk add --no-cache \
-    libstdc++ \
-    libgcc \
-    opus \
-    openssl
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    libstdc++6 \
+    libgcc-s1 \
+    libopus0 \
+    openssl \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy only necessary files
 COPY --from=build /usr/src/app/node_modules ./node_modules
 COPY --from=build /usr/src/app/dist ./dist
 
+# Create logs directory and set permissions
+RUN mkdir -p /usr/src/app/appLogs && \
+    chown -R node:node /usr/src/app && \
+    chown -R node:node /usr/src/app/appLogs && \
+    chmod -R 755 /usr/src/app && \
+    chmod 2755 /usr/src/app/appLogs
+
+# Set environment for production
 ENV NODE_ENV=production
 
 # Add non-root user
@@ -95,8 +85,10 @@ USER node
 
 # Expose WebRTC ports
 EXPOSE 3001
-EXPOSE 443
-EXPOSE 80
+EXPOSE 5349
+EXPOSE 5349/udp
+EXPOSE 3478
+EXPOSE 3478/udp
 
-# Production command
+# Production start command
 CMD ["node", "dist/main.js"]
