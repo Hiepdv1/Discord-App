@@ -4,7 +4,7 @@
 # curl ifconfig.me -- on terminal check public IP address
 # telnet [ipaddress] -- on terminal check connection turn server
 # sudo ufw disable -- disable firewall
-#  sudo ss -tuln | grep [port]
+# sudo ss -tuln | grep [port]
 # sudo systemctl restart coturn
 
 services:

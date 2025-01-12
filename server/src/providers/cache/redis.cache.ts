@@ -21,8 +21,10 @@ export class RedisCacheService {
 
       await this.cacheManager.set(key, encodeData, time || this.ttl);
       this.logger.debug(`Data set in cache with key: ${key}`);
-    } catch (error) {
-      this.logger.error(`Error setting cache with key: ${key}`, error.stack);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        this.logger.error(`Error setting cache with key: ${key}`, error.stack);
+      }
     }
   }
 
@@ -31,7 +33,8 @@ export class RedisCacheService {
       await this.cacheManager.set(key, data, time || this.ttl);
       this.logger.debug(`Data set in cache with key: ${key}`);
     } catch (error) {
-      this.logger.error(`Error setting cache with key: ${key}`, error.stack);
+      if (error instanceof Error)
+        this.logger.error(`Error setting cache with key: ${key}`, error.stack);
     }
   }
 
@@ -58,8 +61,10 @@ export class RedisCacheService {
       this.logger.debug(`Cache hit for key: ${key}`);
       return decodedData;
     } catch (error) {
-      this.logger.error(`Error getting cache for key: ${key}`, error.stack);
-      return null;
+      if (error instanceof Error) {
+        this.logger.error(`Error getting cache for key: ${key}`, error.stack);
+        return null;
+      }
     }
   }
 
@@ -68,7 +73,8 @@ export class RedisCacheService {
       await this.cacheManager.del(key);
       this.logger.debug(`Cache deleted for key: ${key}`);
     } catch (error) {
-      this.logger.error(`Error deleting cache for key: ${key}`, error.stack);
+      if (error instanceof Error)
+        this.logger.error(`Error deleting cache for key: ${key}`, error.stack);
     }
   }
 }

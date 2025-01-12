@@ -39,9 +39,11 @@ export class DropboxService {
       const fileUrl = sharedLinkResponse.result.url.replace('&dl=0', '&raw=1');
 
       return { file: fileUploaded.result, url: fileUrl };
-    } catch (error) {
-      console.error('Error uploading file to Dropbox:', error);
-      throw new BadGatewayException(error.message);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Error uploading file to Dropbox:', error);
+        throw new BadGatewayException(error.message);
+      }
     }
   }
 

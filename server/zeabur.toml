@@ -1,0 +1,19 @@
+[deployment]
+name = "discord-app-server"
+root = "."
+
+[build]
+dockerfile = "./Dockerfile"
+
+[services.app]
+ports = [
+  { number = 3001, type = "HTTP" },
+  { number = 3478, type = ["TCP", "UDP"] },
+  { number = 5349, type = ["TCP", "UDP"] }
+]
+
+[services.redis]
+image = "redis:alpine"
+ports = [
+  { number = 6379, type = "TCP" }
+]

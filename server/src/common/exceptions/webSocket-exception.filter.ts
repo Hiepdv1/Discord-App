@@ -28,24 +28,26 @@ export class WebSocketExceptionFilter extends BaseWsExceptionFilter {
       console.log('Emitting error to client...');
       client.emit('error', error.toJSON(isProduction));
       console.log('Error emitted successfully');
-    } catch (unexpectedError) {
-      const fallbackError = new ErrorCustom(
-        'An unexpected error occurred',
-        false,
-        {
-          statusCode: 500,
-          errorType: ErrorType.INTERNAL,
-          details: {
-            code: 'UNEXPECTED_ERROR',
-            metadata: {
-              originalError: unexpectedError.message,
+    } catch (unexpectedError: unknown) {
+      if (unexpectedError instanceof Error) {
+        const fallbackError = new ErrorCustom(
+          'An unexpected error occurred',
+          false,
+          {
+            statusCode: 500,
+            errorType: ErrorType.INTERNAL,
+            details: {
+              code: 'UNEXPECTED_ERROR',
+              metadata: {
+                originalError: unexpectedError.message,
+              },
             },
-          },
-        }
-      );
-      this.formatErrorLog(fallbackError, client, event);
+          }
+        );
+        this.formatErrorLog(fallbackError, client, event);
 
-      client.emit('error', fallbackError.toJSON(isProduction));
+        client.emit('error', fallbackError.toJSON(isProduction));
+      }
     }
 
     super.catch(exception, host);

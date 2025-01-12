@@ -23,20 +23,21 @@ export class HttpExceptionsFilter extends BaseExceptionFilter {
       this.logFormattedError(error, req, isProduction);
 
       return res.status(error.statusCode).json(error.toJSON(isProduction));
-    } catch (unexpectedError) {
-      const fallbackError = ErrorCustom.InternalError(
-        'An unexpected error occurred',
-        {
-          code: 'ERROR_HANDLER_FAILURE',
-          metadata: {
-            originalError: unexpectedError.message,
-            timestamp: new Date().toISOString(),
-          },
-        }
-      );
-
-      this.logFormattedError(fallbackError, req, isProduction);
-      return res.status(500).json(fallbackError.toJSON(isProduction));
+    } catch (unexpectedError: unknown) {
+      if (unexpectedError instanceof Error) {
+        const fallbackError = ErrorCustom.InternalError(
+          'An unexpected error occurred',
+          {
+            code: 'ERROR_HANDLER_FAILURE',
+            metadata: {
+              originalError: unexpectedError.message,
+              timestamp: new Date().toISOString(),
+            },
+          }
+        );
+        this.logFormattedError(fallbackError, req, isProduction);
+        return res.status(500).json(fallbackError.toJSON(isProduction));
+      }
     }
   }
 

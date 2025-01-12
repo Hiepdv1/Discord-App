@@ -1,46 +1,41 @@
 ############################### 
 # BUILD STAGE
 ###############################
-FROM node:20-bullseye AS build
+FROM node:20-alpine AS build
 
 # Set the working directory
 WORKDIR /usr/src/app
 
 # Install build dependencies
-RUN apt-get update && apt-get install -y \
+RUN apk add --no-cache \
     make \
     g++ \
     python3 \
-    python3-pip \
+    py3-pip \
     libtool \
     autoconf \
     automake \
-    zlib1g-dev \
+    zlib-dev \
     libpng-dev \
-    libjpeg-dev \
+    libjpeg-turbo-dev \
     libwebp-dev \
-    libvips-dev \
-    libstdc++6 \
-    libgcc-s1 \
-    libopus0 \
-    libopus-dev \
-    libssl-dev \
+    vips-dev \
+    libstdc++ \
+    gcc \
+    curl \
+    openssl \
     git \
     bash \
-    gcc \
-    build-essential \
-    curl \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    build-base \
+    opus-dev
 
 # Copy package files
-COPY package*.json ./ 
+COPY package*.json ./
 
-RUN npm ci --unsafe-perm
-
-# Install dependencies with WebRTC
-RUN npm install wrtc@latest --build-from-source
-
+# Install Node.js dependencies
+RUN npm install
+RUN npm install -g @nestjs/cli
+RUN npm install --save multer sharp
 # Copy source code
 COPY . .
 
@@ -53,22 +48,9 @@ RUN npm run build
 ############################### 
 # PRODUCTION STAGE
 ###############################
-FROM node:20-bullseye AS production
+FROM node:20-alpine AS production
 
 WORKDIR /usr/src/app
-
-# Install runtime dependencies
-RUN apt-get update && apt-get install -y \
-    libstdc++6 \
-    libgcc-s1 \
-    libopus0 \
-    openssl \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy only necessary files
-COPY --from=build /usr/src/app/node_modules ./node_modules
-COPY --from=build /usr/src/app/dist ./dist
 
 # Create logs directory and set permissions
 RUN mkdir -p /usr/src/app/appLogs && \
@@ -76,19 +58,29 @@ RUN mkdir -p /usr/src/app/appLogs && \
     chown -R node:node /usr/src/app/appLogs && \
     chmod -R 755 /usr/src/app && \
     chmod 2755 /usr/src/app/appLogs
+    
+# Copy package.json files
+COPY package*.json ./
+
+# Copy build files from build stage
+COPY --from=build /usr/src/app/dist ./dist
+
+# Install production dependencies
+RUN npm ci --only=production && npm cache clean --force
 
 # Set environment for production
+ENV PORT=3001
 ENV NODE_ENV=production
 
 # Add non-root user
 USER node
 
 # Expose WebRTC ports
-EXPOSE 3001
+EXPOSE $PORT
 EXPOSE 5349
 EXPOSE 5349/udp
 EXPOSE 3478
 EXPOSE 3478/udp
 
 # Production start command
-CMD ["node", "dist/main.js"]
+CMD ["sh", "-c", "node dist/main.js"]
